@@ -7,22 +7,18 @@ DESCRIPTION
     made by Classic Tetris (https://www.youtube.com/c/ClassicTetris)
 
 """
-from fileinput import filename
-from pickletools import uint8
-from re import I, L
-from turtle import up
 import numpy as np
 import cv2
 import time
-from imutils.perspective import four_point_transform
 import imutils
 import pandas as pd
 from os import path
 import operator
-
+import argparse
+from gui.interacter import interactive_get_contour
 LENGHT = 2500
 TIME = 4500
-from gui.interacter import interactive_get_contour
+
 
 class TetrisGrabber:
     """
@@ -81,7 +77,7 @@ class TetrisGrabber:
         self.min_x=  np.array([5,0])
         self.height = 0
 
-    def create_grid(self):
+    def create_grid(self, display):
 
         cap = cv2.VideoCapture(self.filename)
         iter = 0
@@ -92,6 +88,7 @@ class TetrisGrabber:
         _, frame = cap.read()
         contour = [[570,350], [280, 380], [250, 100],[450,100]]
         contour=interactive_get_contour(contour, frame)
+        print(contour)
  
         
         top_left_x = min([x[0] for x in contour])
@@ -110,7 +107,6 @@ class TetrisGrabber:
         _, frame = cap.read()
         frame = frame[top_left_y : bot_right_y, top_left_x  : bot_right_x]
         first_img = frame[:, 0:w+15]
-        cv2.imshow('f', first_img)
         second_img = frame[:, w + int((diff)):]
         pxstep = w // 10
         self.draw_grid(first_img, pxstep=pxstep)
@@ -138,11 +134,11 @@ class TetrisGrabber:
                 first_img = frame[:, 15:w]
                 pxstep = w // 10
 
-                self.draw_grid(first_img, pxstep=pxstep)
-                self.draw_grid(second_img, pxstep=pxstep)
+                # self.draw_grid(first_img, pxstep=pxstep)
+                # self.draw_grid(second_img, pxstep=pxstep)
                 
-                cv2.imshow("frame", first_img)
-                cv2.imshow("frame", second_img)
+                cv2.imshow("Frames", frame)
+                
                 indeces_first_obj, first_grid = self.step(first_img)
                 indeces_second_obj,second_grid = self.step(second_img,first=False)
                 
@@ -186,13 +182,13 @@ class TetrisGrabber:
                             for slice_2d in grids:
                                 np.savetxt(outfile, slice_2d, fmt='%i',delimiter=',')
                         df.to_csv(f'{filename}-moves.csv',index = False )
-                        print(df)
                         iter =0
                 a =  self.show_grid_move(first_grid, first_move)
                 f = self.show_grid_move(second_grid, second_move)
-                numpy_horizontal = np.hstack((f,a))
-                cv2.imshow('images' ,numpy_horizontal)
-                previuos_indeces_second_obj =  indeces_second_obj
+                if display:
+                    numpy_horizontal = np.hstack((f,a))
+                    cv2.imshow('images' ,numpy_horizontal)
+                    previuos_indeces_second_obj =  indeces_second_obj
 
                 
                 if second_move:
@@ -509,10 +505,15 @@ class TetrisGrabber:
     
 
 def main():
+    parser = argparse.ArgumentParser(description='Scraping module')
+    parser.add_argument("-d", action="store_true", help="Display grids")
+    args = vars(parser.parse_args())
+    display = args["d"]
     tertis = TetrisGrabber(
         "./video/video.mp4"
     )
-    tertis.create_grid()
+    display = True
+    tertis.create_grid(display)
 
 
 if __name__ == "__main__":
