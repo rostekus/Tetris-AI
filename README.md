@@ -6,27 +6,25 @@
 ├── TetrisAI
 │   ├── __init__.py
 │   └── src
-│       ├── analysis
-│       │   ├── check_data.py
-│       │   ├── create_db.py
-│       │   ├── model.h5
-│       │   ├── models.ipynb
-│       │   └── notebook.ipynb
+│       ├── analysis    
+│       │   ├── check_data.py           <- module for checking scrapped data
+│       │   ├── create_db.py            <- creating two files for training from scrapped files
+│       │   ├── model.h5                <- trained model
+│       │   ├── models.ipynb            <- tried models
+│       │   └── notebook.ipynb          <- notebook for training model
 │       ├── game
-│       │   ├── config.py
-│       │   ├── tetris.py
-│       │   └── tetrisTF.py
+│       │   ├── config.py               <- config files containg tetris' figures 
+│       │   ├── tetris.py               <- tetris game
+│       │   └── tetrisTF.py             <- tetris game for keras model
 │       ├── gui
-│       │   └── interacter.py
+│       │   └── interacter.py           <- module for interactive selecting area of tetris grid
 │       └── scraping
-│           ├── augmentation.py
-│           ├── config.py
-│           └── scrapping.py
-├── data
+│           ├── augmentation.py         <- augementation data, creating holes, shifting grids              
+│           └── scrapping.py            <- scraping data from youtube videos, saving into /data/*.csv
+├── data                                <- scrapped data from several videos
 │   ├── grids.csv
 │   └── moves.csv
-├── pyproject.toml
-├── setup.py
-└── video
+├── setup.py                            <- setup file
+└── video                               <- folder for videos 
     └── video.mp4
 ```
