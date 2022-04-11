@@ -127,7 +127,7 @@ def interactive_get_contour(contours, rescaled_image):
     ax.add_patch(poly)
     ax.set_title(
         (
-            "Drag the corners of the box to the corners of the document. \n"
+            "Drag the corners of the TWO GRIDS \n"
             "Close the window when finished."
         )
     )
@@ -135,9 +135,6 @@ def interactive_get_contour(contours, rescaled_image):
 
     plt.imshow(rescaled_image)
     plt.axis()
-    plt.subplots_adjust(left=0.25, bottom=0.1, right=0.95, top=0.95)
-    play_button = plt.axes([0.1, 0.01, 0.1, 0.1])
-    button = Button(ax=play_button, label="Play")
     plt.show()
     new_points = p.get_poly_points()[:4]
     new_points = np.array([[p] for p in new_points], dtype="int32")
