@@ -49,6 +49,13 @@ After running the script, select the area of TWO tetris grids as is shown below:
 
 Dataset will be saved to `data` folder. Then you can augment your dataset using `augementation` module.
 After that just run `create_db.py` script that will merge all datasets files into two (grids/moves)
+## Problem
+Aftwr scrapping data I began to train models,I got really high accuracy (about 85%) but after testing models on real Tetris game
+this what I got:
+
+As I observed the AI stucks after first 2-3 moves. So i added more examples of grids where average high is relativly low. Unfortunettly what I didn't solve the problem as the accuracy of models dropped to 60%. Screenshot from TensorflowBoard:
+
+
 
 ## Project Structure
 ------------
