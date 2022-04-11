@@ -1,14 +1,12 @@
 from fileinput import filename
 from shutil import move
 import numpy as np
-import config
 import pandas as pd
 import os.path
-from sklearn.utils import shuffle
 
 import time
-
 import re
+
 LENGHT = 100000
 
 class Augmentation:

@@ -18,7 +18,6 @@ from imutils.perspective import four_point_transform
 import imutils
 import pandas as pd
 from os import path
-from gui import interacter
 import operator
 
 LENGHT = 2500
@@ -91,8 +90,8 @@ class TetrisGrabber:
             print("Error opening video stream or file")
             return
         _, frame = cap.read()
-        contour = [[817 ,612], [414, 612], [418, 235],[817 ,234]]
-        contour=interacter.interactive_get_contour(contour, frame)
+        contour = [[570,350], [280, 380], [250, 100],[450,100]]
+        contour=interactive_get_contour(contour, frame)
  
         
         top_left_x = min([x[0] for x in contour])
@@ -511,7 +510,7 @@ class TetrisGrabber:
 
 def main():
     tertis = TetrisGrabber(
-        "/video/video.mp4"
+        "./video/video.mp4"
     )
     tertis.create_grid()
 
