@@ -7,7 +7,7 @@ import os.path
 import time
 import re
 
-LENGHT = 100000
+LENGHT = 1000000
 
 class Augmentation:
     """
@@ -104,34 +104,38 @@ class Augmentation:
                         indeces.append((x,y))
     
     def shifting(self):
-        
-        grids = np.loadtxt('/data/grids.csv')
+        grids = np.loadtxt('./data/grids.csv', delimiter=',')
         size = grids.size
         n = int(size/(20*10))
         grids.resize((n,20,10))
-        df  = pd.read_csv('/data/move.csv')
+        df  = pd.read_csv('./data/moves.csv')
         df_aug = pd.DataFrame(index=np.arange(0, LENGHT), columns=["move"])
         grids_aug = np.zeros(shape=(LENGHT,20,10))
         id  = 0
         for iter, grid in enumerate(grids):
-            first_three_row = grid[17:20]
-            for i, row in enumerate(first_three_row ,1):
+            for i, row in enumerate(grid[::-1] ,1):
                 procent = np.sum(row,axis = 0)
                 procent /=(10)
-                if procent >= 0.75:
+                if procent >= 0.60:
                     new_grid = np.zeros((20,10))
                     new_grid[i:20] = grid[:20-i]
                     grids_aug[id] = new_grid
-                    df_aug.iloc[id] = df.move.iloc[iter]
+                    
+                    df_aug.iloc[id] = df.iloc[iter]
                     id += 1
+                    if id %500 == 0:
+                        print('500')
                     if id == LENGHT:
                         name = time.time()
+                        print('saved')
                         with open(f'./data/aug/{name}-grids.csv', 'a') as outfile:
                             for slice_2d in grids_aug[:iter]:
                                 np.savetxt(outfile, slice_2d, fmt='%i',delimiter=',')
                         df_aug[:iter+1].to_csv(f'./data/aug/{name}-moves.csv',index = False )
                         id = 0
                         grids_aug = np.zeros(shape=(LENGHT,20,10))
+                else:
+                    break
          
         name = time.time()
         with open(f'./data/aug/{name}-grids.csv', 'a') as outfile:
@@ -155,15 +159,15 @@ class Augmentation:
 
 if __name__ == "__main__":
     au = Augmentation()
-    files = os.listdir('./data')
-    pattern  = r"(.+)-grids.csv"
-    filenames = []
-    for file in files:
-        find_name = re.search(pattern, file, re.IGNORECASE)
-        if find_name:
-            filenames.append(find_name.group(1))
-    moves = ['ROT', 'RIGHT', 'LEFT', 'DOWN']
-    filenames =[0]
-    au.create_holes(move,filenames)
+    # files = os.listdir('./data')
+    # pattern  = r"(.+)-grids.csv"
+    # filenames = []
+    # for file in files:
+    #     find_name = re.search(pattern, file, re.IGNORECASE)
+    #     if find_name:
+    #         filenames.append(find_name.group(1))
+    # moves = ['ROT', 'RIGHT', 'LEFT', 'DOWN']
+    # filenames =[0]
+    # au.create_holes(move,filenames)
     au.shifting()
 
