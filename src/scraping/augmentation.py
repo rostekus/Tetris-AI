@@ -72,6 +72,7 @@ class Augmentation:
                                 # grids_aug[iter] = grid_holes
                                 iter +=1
                                 if iter == LENGHT:
+                                    assert grids_aug.shape[0] == grids_aug.shape
                                     name = time.time()
                                     with open(f'./data/aug/{name}-grids.csv', 'a') as outfile:
                                         for slice_2d in grids_aug[:iter]:
@@ -109,7 +110,7 @@ class Augmentation:
         n = int(size/(20*10))
         grids.resize((n,20,10))
         df  = pd.read_csv('./data/moves.csv')
-        df_aug = pd.DataFrame(index=np.arange(0, LENGHT), columns=["move"])
+        df_aug = pd.DataFrame(index=np.arange(LENGHT,), columns=["move"])
         grids_aug = np.zeros(shape=(LENGHT,20,10))
         id  = 0
         for iter, grid in enumerate(grids):
@@ -128,10 +129,11 @@ class Augmentation:
                     if id == LENGHT:
                         name = time.time()
                         print('saved')
+                        
                         with open(f'./data/aug/{name}-grids.csv', 'a') as outfile:
                             for slice_2d in grids_aug[:iter]:
                                 np.savetxt(outfile, slice_2d, fmt='%i',delimiter=',')
-                        df_aug[:iter+1].to_csv(f'./data/aug/{name}-moves.csv',index = False )
+                        df_aug[:iter].to_csv(f'./data/aug/{name}-moves.csv',index = False )
                         id = 0
                         grids_aug = np.zeros(shape=(LENGHT,20,10))
                 else:
@@ -160,7 +162,7 @@ class Augmentation:
 if __name__ == "__main__":
     au = Augmentation()
     # files = os.listdir('./data')
-    # pattern  = r"(.+)-grids.csv"
+    # ['Unnamed: 0.1', 'Unnamed: 0', 'move', '0']d
     # filenames = []
     # for file in files:
     #     find_name = re.search(pattern, file, re.IGNORECASE)
