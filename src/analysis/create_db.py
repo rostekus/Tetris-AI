@@ -1,63 +1,60 @@
 from fileinput import filename
 import os
 import pandas as pd
+import re
+import glob
 
-class DataBase():
+
+class DataBase:
     """
     A class for augmentation of the collected dataset of
     tetris' grids
     ...
     Methods
     -------
-    merge(filenames, name)
-        Function merges all csv filenames 
-    merge_final(name):
-        Fucntion merges final two files for moves
+    merge(filenames, output = 'grids.csv')
+        Function merges all numpy csv filenames
+    merge_final(self, grids, moves)
+        Function merges final two files for moves
         and grids
-    merge_aug(self)
-        merges augemented data to one file   
+    merge_moves(filenames, output = 'moves.csv')
+        Function merges all pandas csv filenames
+    get(dir)
+        Returns all filenemas of grids and moves
     """
 
-    def merge(self, filenames, name):
+    def merge_grids(self, filenames, output="grids.csv"):
 
-        with open(f'./data/{name}', 'w') as outfile:
+        with open(output, "w") as outfile:
             for fname in filenames:
                 with open(fname) as infile:
                     for line in infile:
                         outfile.write(line)
 
-    def merge_final(self,name):
-        filenames = ['data/aug_moves.csv','data/final_moves.csv']
-        df = pd.concat(map(pd.read_csv, filenames),ignore_index=True)
-        df.to_csv('./data/moves.csv')
-        filenames = ['data/aug_grids.csv', 'data/new_grid.csv']
-        self.merge(filenames, name)
+    def merge_final(self, grids, moves):
+        df = pd.concat(map(pd.read_csv, moves), ignore_index=True)
+        df.to_csv("./data/finalmoves.csv", index=False)
+        self.merge_grids(grids, "./data/finalgrids.csv")
 
-    def merge_aug(self):
-        files = os.listdir('data/aug')
+    def merge_moves(self, filenames, output="moves.csv"):
+        df = pd.concat(map(pd.read_csv, filenames), ignore_index=True)
+        df.to_csv("output")
+
+    def get(self, dir):
+        files = os.listdir(dir)
         import re
-        pattern  = r"(.+)-moves.csv"
-        filenames = []
+
+        pattern_move = r"(.+)-moves.csv"
+        pattern_grid = r"(.+)-grids.csv"
+        filemoves = []
+        filegrids = []
         for file in files:
-            find_name = re.search(pattern, file, re.IGNORECASE)
-        if find_name:
-             filenames.append(f'./data/aug/{find_name.group(1)}-moves.csv')
-    df = pd.concat(map(pd.read_csv, filenames),ignore_index=True)
-    df.to_csv('./data/aug_moves.csv')
+            find_move = re.search(pattern_move, file, re.IGNORECASE)
+            if find_move:
+                filemoves.append(f"{dir}{find_move.group(1)}-moves.csv")
 
-def main():
-    db  = DataBase()
-    pattern  = r"(.+)-grids.csv"
-    filenames = []
-    for file in files:
-        find_name = re.search(pattern, file, re.IGNORECASE)
-        if find_name:
-                filenames.append(f'./data/aug/{find_name.group(1)}-grids.csv') 
-    db.merge(filenames,'aug_grids.csv')
+            find_grid = re.search(pattern_grid, file, re.IGNORECASE)
+            if find_grid:
+                filegrids.append(f"{dir}{find_move.group(1)}-grids.csv")
 
-
-if __name__ == "__main__":
-    main()
-
-
-
+        return filegrids, filemoves
