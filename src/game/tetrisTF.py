@@ -1,355 +1,348 @@
-from gc import get_objects
-from re import X
 import pygame
 import random
-import time
-from gym import Env
-from gym.spaces import Box, Discrete
-import numpy as np
-import sys
-from tensorflow import keras
-
-sys.path.append("./game/")
 import config
-import statistics
-
+import numpy as np
 pygame.font.init()
-
+import keras
 
 # TODO
 # quit button
 # scorea save to file
 # add background
-# done, reward, info
-# speed parameter
-# after teaching learn sklearn basen on outoput of ai
-# finish cleaing function
 
-# if ---- change y
+
 class Object(object):
-    def __init__(self, x, y, shape=None):
-        if not shape:
-            self.shape = random.choice(config.shapes)
-        else:
-            self.shape = shape
-        self._rotation = 0
-        self.current_position = self.get_positions()
-        self._x = self.current_position[0][0]
-        self._y = self.current_position[0][1]
-
-    @property
-    def rotation(self):
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, value):
-        self._rotation = value
-        self._x = self.current_position[0][0]
-        self._y = self.current_position[0][1]
-        self.current_position = self.get_positions(self._x, self._y, rotate=True)
-
-    @property
-    def y(self):
-        return self._y
-
-    @y.setter
-    def y(self, value):
-        self._y = value
-        self.current_position = self.get_positions()
-
-    @property
-    def x(self):
-        return self._x
-
-    @x.setter
-    def x(self, value):
-        self._x = value
-        self.current_position = self.get_positions()
-
-    def get_positions(self, x=7, y=0, rotate=False):
-        position = []
-        if rotate:
-            x += 2
-            y += 1
-        rot = self.rotation % len(self.shape)
-        for i, row in enumerate(self.shape[rot][::-1]):
-            for j, element in enumerate(row):
-                if element == "0":
-                    position.append((x - i - 1, y - j))
-
-        return position
+    def __init__(self, x, y, shape):
+        self.x = x
+        self.y = y
+        self.shape = shape
+        self.color = config.shape_colors[config.shapes.index(shape)]
+        self.rotation = 0
 
 
-class Game(Env):
-    def __init__(self, user=False):
-        self.grid = self.create_grid()
-        self.current_object = self.get_object(config.shapes[2])
-        self.user = user
-        self.done = False
-        self.reward = 0
-        self.iter = 0
-        self.action_space = Discrete(4)
-        self.observation_space = Box(low=0, high=1, dtype=int, shape=(20, 10))
-        self.state = self.get_state()
-        self.locked_positions = []
-        self.grid_reward = 0
+class Game:
+    def __init__(self):
+        self.s_width = config.s_width
+        self.s_height = config.s_height
+        self.play_width = config.play_width
+        self.play_height = config.play_height
+        self.block_size = config.block_size
+        self.shapes = config.shapes
 
-    def create_grid(self):
-        return np.zeros(20 * 10).reshape(20, 10)
+        self.top_left_x = (self.s_width - self.play_width) // 2
+        self.top_left_y = self.s_height - self.play_height
 
-    def reset(self):
-        self.grid = self.create_grid()
-        self.iter = 0
-        self.done = False
-        self.locked_positions = []
-        self.current_object = self.get_object(config.shapes[2])
-        return self.grid
+    def create_grid(self, locked_pos={}, keras =  False):  # *
+        if keras:
+            grid =  np.zeros((20,10))
+            for (j,i) in locked_pos:
+                grid[i][j] = 1
+            return grid
 
-    def draw_locked_pos(self):
-        for y, x in self.locked_positions:
-            if y < 20:
-                self.grid[y][x] = 1
 
-    def draw_object(self):
-        for x, y in self.current_object.current_position:
-            if y >= 0:
-                try:
-                    self.grid[y][x] = 1
-                except:
-                    self.done = True
+        grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
 
-    def check_object_lock(self):
-        for y, x in self.locked_positions:
-            if (x, y - 1) in self.current_object.current_position:
-                for x, y in self.current_object.current_position:
-                    self.locked_positions.append((y, x))
+        for i in range(len(grid)):
+            for j in range(len(grid[i])):
+                if (j, i) in locked_pos:
+                    c = locked_pos[(j, i)]
+                    grid[i][j] = c
+        return grid
 
-                self.iter = 0
-                return True
+    def convert_shape_format(self, shape):
+        positions = []
+        format = shape.shape[shape.rotation % len(shape.shape)]
 
-        for x, y in self.current_object.current_position:
-            if y >= 19:
-                for y, x in self.current_object.current_position:
-                    self.locked_positions.append((x, y))
+        for i, line in enumerate(format):
+            row = list(line)
+            for j, column in enumerate(row):
+                if column == "0":
+                    positions.append((shape.x + j, shape.y + i))
 
-                self.iter = 0
-                return True
-        return False
+        for i, pos in enumerate(positions):
+            positions[i] = (pos[0] - 2, pos[1] - 4)
 
-    def object_rotate(self):
-        pass
+        return positions
 
-    def get_state(self):
-        return self.grid
+    def valid_space(self, shape, grid):
+        accepted_pos = [
+            [(j, i) for j in range(10) if grid[i][j] == (0, 0, 0)] for i in range(20)
+        ]
+        accepted_pos = [j for sub in accepted_pos for j in sub]
 
-    def get_object(self, shape=None):
-        return Object(5, 0, shape)
+        formatted = self.convert_shape_format(shape)
 
-    def possible_move(self, move):
-        for x, y in self.current_object.current_position:
-            x_next = x + move
-            if x_next < 0 or x_next > 9:
-
-                return False
-            if (x_next, y) in self.locked_positions:
-
-                return False
-        for y, x in self.locked_positions:
-            if (x - 1, y) in self.current_object.current_position:
-
-                return False
-            elif (x + 1, y) in self.current_object.current_position:
-
-                return False
-
+        for pos in formatted:
+            if pos not in accepted_pos:
+                if pos[1] > -1:
+                    return False
         return True
 
-    def move_object(self, move_x, move_y=1):
-        if move_x:
-            if self.possible_move(move_x):
-                for i, (x, y) in enumerate(self.current_object.current_position):
-                    self.current_object.current_position[i] = (x + move_x, y + move_y)
-        else:
-            for i, (x, y) in enumerate(self.current_object.current_position):
-                self.current_object.current_position[i] = (x, y + move_y)
-
-    def clear_row(self):
-        cleared = 0
-        for i, row in enumerate(self.grid):
-            if all(row):
-                cleared += 1
-                for x in range(10):
-                    self.grid[i][x] = 0
-                for row_id in range(i - 1, -1, -1):
-                    for x in range(10):
-                        self.grid[row_id + 1][x] = self.grid[row_id][x]
-
-                self.locked_positions = []
-                for i, row in enumerate(self.grid[::-1]):
-                    if any(row):
-                        for j, x in enumerate(row):
-                            if x:
-                                self.locked_positions.append((19 - i, j))
-                    else:
-                        break
-        return 100 * cleared
-
-    def reward_fun(self):
-        grid_copy = self.grid.copy()
-
-        for y, x in self.current_object.current_position:
-            grid_copy[x][y] = 0
-        number_of_blocks = []
-        height = []
-        non_empty_columns = 0
-        for x in range(0, 10):
-            number_of_blocks.append(sum(grid_copy[:, x]))
-            if number_of_blocks[-1]:
-                non_empty_columns += 1
-                height.append(20 - np.where(grid_copy[:, x] == 1)[0][0])
-            else:
-                height.append(0)
-        holes = []
-        for h, n in zip(height, number_of_blocks):
-            holes.append(h - n)
-
-        bump = []
-
-        bump.append(height[0] - height[1])
-
-        for i in range(1, 9):
-            average_height = int((height[i - 1] + height[i + 1]) / 2)
-            bump.append(height[i] - average_height)
-        bump.append(height[9] - height[9])
-
-        reward = 0
-        reward -= np.sum(holes)
-        if not 1 / (np.sum(bump) / 10) > 100:
-            reward += 1 / (np.sum(bump) / 10)
-        reward += non_empty_columns * 2
-        reward -= np.sum(height)
-        self.grid_reward = reward
-
-        return self.grid_reward
-
-    def check_lost(self):
-        for pos in self.locked_positions:
+    def check_lost(self, positions):
+        for pos in positions:
             x, y = pos
-            if y < 0:
+            if y < 1:
                 return True
-            else:
-                return False
 
-    def draw_grid(self):
-        self.grid = self.create_grid()
-        self.draw_locked_pos()
-        self.draw_object()
+        return False
 
-    def step(self, action):
-        move = 0
-        self.reward = 0
-        if not self.user:
+    def get_shape(self):
+        return Object(5, 0, random.choice(self.shapes))
+
+    def draw_text_middle(self, surface, text, size, color):
+        font = pygame.font.SysFont("comicsans", size, bold=True)
+        label = font.render(text, 1, color)
+
+        surface.blit(
+            label,
+            (
+                self.top_left_x + self.play_width / 2 - (label.get_width() / 2),
+                self.top_left_y + self.play_height / 2 - label.get_height() / 2,
+            ),
+        )
+
+    def draw_grid(self, surface, grid):
+        sx = self.top_left_x
+        sy = self.top_left_y
+
+        for i in range(len(grid)):
+            pygame.draw.line(
+                surface,
+                (128, 128, 128),
+                (sx, sy + i * self.block_size),
+                (sx + self.play_width, sy + i * self.block_size),
+            )
+            for j in range(len(grid[i])):
+                pygame.draw.line(
+                    surface,
+                    (128, 128, 128),
+                    (sx + j * self.block_size, sy),
+                    (sx + j * self.block_size, sy + self.play_height),
+                )
+
+    def clear_rows(self, grid, locked):
+
+        inc = 0
+        for i in range(len(grid) - 1, -1, -1):
+            row = grid[i]
+            if (0, 0, 0) not in row:
+                inc += 1
+                ind = i
+                for j in range(len(row)):
+                    try:
+                        del locked[(j, i)]
+                    except:
+                        continue
+
+        if inc > 0:
+            for key in sorted(list(locked), key=lambda x: x[1])[::-1]:
+                x, y = key
+                if y < ind:
+                    newKey = (x, y + inc)
+                    locked[newKey] = locked.pop(key)
+
+        return inc
+
+    def draw_next_shape(self, shape, surface):
+        font = pygame.font.SysFont("comicsans", 30)
+        label = font.render("Next Shape", 1, (255, 255, 255))
+
+        sx = self.top_left_x + self.play_width + 50
+        sy = self.top_left_y + self.play_height / 2 - 100
+        format = shape.shape[shape.rotation % len(shape.shape)]
+
+        for i, line in enumerate(format):
+            row = list(line)
+            for j, column in enumerate(row):
+                if column == "0":
+                    pygame.draw.rect(
+                        surface,
+                        shape.color,
+                        (
+                            sx + j * self.block_size,
+                            sy + i * self.block_size,
+                            self.block_size,
+                            self.block_size,
+                        ),
+                        0,
+                    )
+
+        surface.blit(label, (sx + 10, sy - 30))
+
+    def update_score(self, nscore):
+        score = self.max_score()
+
+        # with open('scores.txt', 'w') as f:
+        #     if int(score) > nscore:
+        #         f.write(str(score))
+        #     else:
+        #         f.write(str(nscore))
+
+    def max_score(self):
+        # with open('scores.txt', 'r') as f:
+        #     lines = f.readlines()
+        #     score = lines[0].strip()
+        score = 0
+        return score
+
+    def draw_window(self, surface, grid, score=0, last_score=0):
+        surface.fill((0, 0, 0))
+
+        pygame.font.init()
+        font = pygame.font.SysFont(pygame.font.get_default_font(), 60)
+        label = font.render("Tetris", 1, (255, 255, 255))
+
+        surface.blit(
+            label, (self.top_left_x + self.play_width / 2 - (label.get_width() / 2), 30)
+        )
+
+        # current score
+        font = pygame.font.SysFont(pygame.font.get_default_font(), 30)
+        label = font.render("Score: " + str(score), 1, (255, 255, 255))
+
+        sx = self.top_left_x + self.play_width + 50
+        sy = self.top_left_y + self.play_height / 2 - 100
+
+        surface.blit(label, (sx + 20, sy + 160))
+        # last score
+        # label = font.render('High Score: ' + last_score, 1, (255,255,255))
+
+        sx = self.top_left_x - 200
+        sy = self.top_left_y + 200
+
+        surface.blit(label, (sx + 20, sy + 160))
+
+        for i in range(len(grid)):
+            for j in range(len(grid[i])):
+                pygame.draw.rect(
+                    surface,
+                    grid[i][j],
+                    (
+                        self.top_left_x + j * self.block_size,
+                        self.top_left_y + i * self.block_size,
+                        self.block_size,
+                        self.block_size,
+                    ),
+                    0,
+                )
+
+        pygame.draw.rect(
+            surface,
+            (255, 0, 0),
+            (self.top_left_x, self.top_left_y, self.play_width, self.play_height),
+            5,
+        )
+
+        self.draw_grid(surface, grid)
+
+    def play(self, win):  # *
+        last_score = self.max_score()
+        locked_positions = {}
+        grid = self.create_grid(locked_positions)
+        
+        change_Object = False
+        run = True
+        current_Object = self.get_shape()
+        next_Object = self.get_shape()
+        clock = pygame.time.Clock()
+        fall_time = 0
+        fall_speed = 0.27
+        level_time = 0
+        score = 0
+        state = self.create_grid(locked_positions, keras = True)
+        model = keras.models.load_model(r'/Users/rostyslavmosorov/Desktop/tetris_ai/src/analysis/88.h5')
+        action = np.argmax(model.predict(np.array([state])))
+
+        while run:
+            
+            state = self.create_grid(locked_positions, keras=True)
+            
+            grid = self.create_grid(locked_positions)
+            fall_time += clock.get_rawtime()
+            level_time += clock.get_rawtime()
+            clock.tick()
+
+            if level_time / 1000 > 5:
+                level_time = 0
+                if level_time > 0.12:
+                    level_time -= 0.005
+
+            if fall_time / 1000 > fall_speed:
+                fall_time = 0
+                current_Object.y += 1
+                if (
+                    not (self.valid_space(current_Object, grid))
+                    and current_Object.y > 0
+                ):
+                    current_Object.y -= 1
+                    change_Object = True
+
+
             if action == 1:
-                self.move_object(-1)
+                current_Object.x -= 1
+                if not (self.valid_space(current_Object, grid)):
+                    current_Object.x += 1
 
             elif action == 2:
-                self.move_object(1)
-
-            elif action == 3:
-                self.move_object(0)
-                if self.check_object_lock():
-                    self.current_object = self.get_object()
-                else:
-                    self.move_object(0)
+                current_Object.x += 1
+                if not (self.valid_space(current_Object, grid)):
+                    current_Object.x -= 1
 
             elif action == 0:
-                old_position = self.current_object.current_position
+                current_Object.y += 1
+                if not (self.valid_space(current_Object, grid)):
+                    current_Object.y -= 1
 
-                self.current_object.rotation += 1
-                if not self.possible_move(0):
-                    self.reward -= 10
-                    self.current_object.current_position = old_position
-                self.move_object(0)
+            elif action == 3:
+                    current_Object.rotation += 1
+                    if not (self.valid_space(current_Object, grid)):
+                        current_Object.rotation -= 1
 
-        added_locked = False
+            shape_pos = self.convert_shape_format(current_Object)
+            pygame.time.delay(100)
+            for i in range(len(shape_pos)):
+                x, y = shape_pos[i]
+                if y > -1:
+                    grid[y][x] = current_Object.color
+                    state[y][x] = 1
+            action = np.argmax(model.predict(np.array([state])))
+            if change_Object:
+                for pos in shape_pos:
+                    p = (pos[0], pos[1])
+                    locked_positions[p] = current_Object.color
+                current_Object = next_Object
+                next_Object = self.get_shape()
+                change_Object = False
+                score += self.clear_rows(grid, locked_positions) * 10
 
-        if self.user:
-            flag = True
-            while flag:
-                for event in pygame.event.get():
+            self.draw_window(win, grid, score, last_score)
+            self.draw_next_shape(next_Object, win)
+            pygame.display.update()
 
-                    if event.type == pygame.KEYDOWN:
-                        event.key == pygame.K_DOWN
-                        if event.key == pygame.K_LEFT:
-                            self.move_object(-1)
-                            move = 1
-                            flag = False
+            if self.check_lost(locked_positions):
+                self.draw_text_middle(win, "YOU LOST!", 80, (255, 255, 255))
+                pygame.display.update()
+                pygame.time.delay(1500)
+                run = False
+                self.update_score(score)
 
-                        elif event.key == pygame.K_RIGHT:
-                            self.move_object(1)
-                            move = 2
-                            flag = False
+    def main_menu(self, win):
+        run = True
+        while run:
+            win.fill((0, 0, 0))
+            self.draw_text_middle(win, "Press Any Key To Play", 60, (255, 255, 255))
+            pygame.display.update()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+                if event.type == pygame.KEYDOWN:
+                    self.play(win)
 
-                        elif event.key == pygame.K_DOWN:
+        pygame.display.quit()
 
-                            self.move_object(0)
-                            move = 3
-                            if self.check_object_lock():
-                                added_locked = True
-                                self.current_object = self.get_object()
-                            else:
-                                self.move_object(0)
-                            flag = False
 
-                        elif event.key == pygame.K_UP:
-                            old_position = self.current_object.current_position
-
-                            self.current_object.rotation += 1
-                            if not self.possible_move(0):
-                                self.reward -= 2
-                                self.current_object.current_position = old_position
-                            self.move_object(0)
-                            flag = False
-
-        self.iter += 1
-        self.draw_grid()
-
-        if self.check_object_lock():
-
-            self.current_object = self.get_object()
-            added_locked = True
-
-        for y, _ in self.locked_positions:
-            if y < 0:
-                self.reward -= 10
-                self.done = True
-                self.iter = 0
-        info = {}
-
-        self.reward += self.clear_row()
-
-        if self.done == True:
-            self.reset()
-
-        if added_locked:
-            self.reward += self.reward_fun()
-
-        return self.grid, move, self.done, info
-
-    def render(self, mode=None):
-        print(self.reward)
-        print(self.grid)
-
-    def play(self):
-        pygame.init()
-        env = Game()
-        model = keras.models.load_model('model.h5')
-        state = env.reset()
-        step = model.predict(np.array([state]))
-        done = False
-        while not done:
-            grid, move, done, info  = env.step(step)
-            step = model.predict(np.array([state]))
-   
-    
-  
+if __name__ == "__main__":
+    game = Game()
+    win = pygame.display.set_mode((config.s_width, config.s_height))
+    pygame.display.set_caption("Tetris")
+    game.main_menu(win)
