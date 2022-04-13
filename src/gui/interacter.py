@@ -126,10 +126,7 @@ def interactive_get_contour(contours, rescaled_image):
     _, ax = plt.subplots()
     ax.add_patch(poly)
     ax.set_title(
-        (
-            "Drag the corners of the TWO GRIDS \n"
-            "Close the window when finished."
-        )
+        ("Drag the corners of the TWO GRIDS \n" "Close the window when finished.")
     )
     p = PolygonInteractor(ax, poly)
 
