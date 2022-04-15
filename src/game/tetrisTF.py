@@ -234,8 +234,19 @@ class Game:
         )
 
         self.draw_grid(surface, grid)
-
-    def play(self, win):  # *
+    def get_height(self, grid):
+        locked = np.zeros(10)
+        for i, column in enumerate(grid.T):
+            j = 19
+            height = 0
+            while column[j] and j >= 0:
+                height += 1
+                j -= 1
+            if locked[i] != height:
+                locked[i] = height
+        return locked
+    
+    def play(self, win):  
         last_score = self.max_score()
         locked_positions = {}
         grid = self.create_grid(locked_positions)
@@ -250,8 +261,9 @@ class Game:
         level_time = 0
         score = 0
         state = self.create_grid(locked_positions, keras = True)
-        model = keras.models.load_model(r'/Users/rostyslavmosorov/Desktop/tetris_ai/src/analysis/88.h5')
-        action = np.argmax(model.predict(np.array([state])))
+        model = keras.models.load_model(r'/Users/rostyslavmosorov/Desktop/tetris_ai/src/game/76.h5')
+        height = self.get_height(state)
+        action =model.predict([[state], height])
 
         while run:
             
@@ -305,7 +317,10 @@ class Game:
                 if y > -1:
                     grid[y][x] = current_Object.color
                     state[y][x] = 1
-            action = np.argmax(model.predict(np.array([state])))
+            
+            height = self.get_height(state)
+            action = np.argmax(model.predict([state, height]))
+
             if change_Object:
                 for pos in shape_pos:
                     p = (pos[0], pos[1])
