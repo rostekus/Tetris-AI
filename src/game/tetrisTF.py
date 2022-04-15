@@ -263,7 +263,7 @@ class Game:
         state = self.create_grid(locked_positions, keras = True)
         model = keras.models.load_model(r'/Users/rostyslavmosorov/Desktop/tetris_ai/src/game/76.h5')
         height = self.get_height(state)
-        action =model.predict([[state], height])
+        action =np.argmax(model.predict([state.reshape((1,20,10)), height.reshape(1,10)]))
 
         while run:
             
@@ -319,7 +319,7 @@ class Game:
                     state[y][x] = 1
             
             height = self.get_height(state)
-            action = np.argmax(model.predict([state, height]))
+            action =np.argmax(model.predict([state.reshape((1,20,10)), height.reshape(1,10)]))
 
             if change_Object:
                 for pos in shape_pos:
