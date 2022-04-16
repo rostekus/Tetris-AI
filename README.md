@@ -30,19 +30,26 @@ Than run scrapping module
 python3 scrapping.py [-d]
 ```
 * The `-d` displays scrapping grids
-<img src="/images/scraping.gif" width="480" >
+<p align="center">
+  <img width="480" src="/images/scraping.gif">
+</p>
 
 
 After running the script, select the area of TWO tetris grids as is shown below:
+<p align="center">
+  <img width="480" src="/images/selection.png">
+</p>
 
-<img src="/images/selection.png" width="480" >
+
 
 Dataset will be saved to `data` folder. Then you can augment your dataset using `augementation` module.
 After that just run `create_db.py` script that will merge all datasets files into two (grids/moves)
 ## Problems
 During the developtemnt of this project I faced two major problems. One of them was to  write a algorith for predicting user move based on tetris gris as there are frames where due to high speed game engine for smoothness of gameplay, draws strange figures. Examples:
+<p align="center">
+  <img width="480" src="/images/strange.png">
+</p>
 
-<img src="/images/strange.png" width="480" >
 I came up with three main solutions to that issue:
 
 - detecting type of object (squere, line, Z, L)
@@ -71,7 +78,15 @@ What I also tried was tinkering with what portion of dataset should each categor
 Unfortunately, this division doesn't correspond to the real data as about 80% of input is DOWN key but if we created dataset where 80% of moves are DOWN KEY, the NN would just always predict the DOWN move.
 
 What came up next to my mind was to change from Sequential to Functional API. I thought that it is good idea as I could add additional input and have more flexiability in the structure of the model. Height for each column in tetris grid was used for extra input. Example of the network:
+<p align="center">
+  <img width="360" height = "540" src="/images/model.png">
+</p>
 
+
+It improved general AI behaviour but still it couldn't clear even one row.
+<p align="center">
+  <img width="360", src="/images/two_inputs.gif">
+</p>
 
 ## Project Structure
 ------------
@@ -92,7 +107,7 @@ What came up next to my mind was to change from Sequential to Functional API. I 
     │   ├── gui
     │   │   └── interacter.py           <- module for interactive selecting area of tetris grid
     │   └── scraping
-    │       ├── augmentation.py         <- augementation data, creating holes, shifting grids              
+    │       ├── augmentation.py         <- data augementation, creating holes, shifting grids              
     │       └── scrapping.py            <- scraping data from youtube videos, saving into /data/*.csv
     ├── data                            <- scrapped data from videos
     │   ├── grids.csv
