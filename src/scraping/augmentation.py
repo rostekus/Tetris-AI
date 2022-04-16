@@ -173,6 +173,23 @@ class Augmentation:
             indeces.append((y, x))
         return indeces
 
+    def heights(self, filename):
+        grids = np.loadtxt(filename, delimiter=",")
+        grids = grids.reshape(int(grids.shape[0]/20),20,10)
+        heights = np.zeros((int(grids.shape[0]),10))
+        for i, grid in enumerate(grids):
+            height = self.get_height(grid)
+            heights[i] = height
+        with open("./data/heights.csv", "a") as outfile:
+                np.savetxt(outfile,heights , fmt="%i", delimiter=",")
+    
+    
+        
+
+
+    
+        
+
 
 if __name__ == "__main__":
     au = Augmentation()
@@ -186,4 +203,5 @@ if __name__ == "__main__":
     # moves = ['ROT', 'RIGHT', 'LEFT', 'DOWN']
     # filenames =[0]
     # au.create_holes(move,filenames)
-    au.shifting()
+    # au.shifting()
+    au.heights('/Users/rostyslavmosorov/Desktop/tetris_ai/data/finalgrid.csv')
