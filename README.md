@@ -7,7 +7,7 @@ I can proudly say that it is the biggest project that I've been working on.
 When I started this project I wanted to create RL AI for playing tetris but then I've youtube video when was proposed to scraped data from Classic Tetris World Championship [youtube channel](https://www.youtube.com/c/ClassicTetris) and based on that data, train NN. Author didn't provide any source code so I knew I had to try to implement it. 
 This project has taught me a number of things. First of all working with read data isn't as easy as with Iris or MNIST data set.
 Secodnly, if we are talking about bigger project than two-three files, it is crutial to be certain that modules which are finished are working correctly since their infuence work of fututr modules. Finally...
-During the developtemnt of this project I faced three major problems. The hardest things was to write a algorith for predicting user move based on tetris gris as there are frames where due to high speed game engine for smoothness of gameplay, draws strange figures. Examples:
+During the developtemnt of this project I faced two major problems. One of them was to  write a algorith for predicting user move based on tetris gris as there are frames where due to high speed game engine for smoothness of gameplay, draws strange figures. Examples:
 
 <img src="/images/strange.png" width="480" >
 I came up with three main solutions to that issue:
@@ -66,6 +66,12 @@ What I also tried was tinkering with what portion of dataset should each categor
 - RIGHT - 23%
 
 Unfortunately, This devistion doesn't corrested to the real data as about 80% of input is DOWN key but if we created dataset where 80% of moves are DOWN KEY, the NN would just always predict DOWN move.
+
+What came up next to my mind was to change from Sequential to Functional API. I thought that it is good idea as I could add additional input and have move flexiability in the structure of the model. Height for each column in tetris grid was used for extra input. Example of the network:
+
+
+## What can be done next?
+
 
 ## Project Structure
 ------------
