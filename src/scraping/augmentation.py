@@ -7,7 +7,7 @@ import os.path
 import time
 import re
 
-LENGHT = 1000000
+LENGHT = 100000
 
 
 class Augmentation:
@@ -24,6 +24,11 @@ class Augmentation:
     shifting()
         Fucntion shifts every grid downwards 3 times.
     """
+
+    def __init__(self, grids, moves, heights):
+        self.grids = grids
+        self.moves = moves
+        self.heights = heights
 
     def get_height(self, grid):
         locked = np.zeros(10)
@@ -43,12 +48,12 @@ class Augmentation:
         for filename in filenames:
             for mov in moves:
 
-                df = pd.read_csv(f"./data/move.csv")
+                df = pd.read_csv(self.moves)
                 df[df["move"] == mov]
 
                 indeces = np.array(df[df.move == mov].index)
 
-                grids = np.loadtxt(f"./data/grids.csv")
+                grids = np.loadtxt(self.grids)
                 files_num = 0
 
                 size = grids.size
@@ -97,28 +102,28 @@ class Augmentation:
                 np.savetxt(outfile, slice_2d, fmt="%i", delimiter=",")
         df_aug[:iter].to_csv(f"./data/aug/{name}-moves.csv", index=False)
 
-    def delete_object(self, grid):
-        indeces = []
-        for x, column in enumerate(grid.T):
-            for y, block in enumerate(column):
-                height = 0
-                if block == 1:
-                    while grid[y][x] == 1:
-                        height += 1
-                        if height < 4:
-                            break
-                        elif height == 19:
-                            break
-                        y += 1
-                    else:
-                        indeces.append((x, y))
+    # def delete_object(self, grid):
+    #     indeces = []
+    #     for x, column in enumerate(grid.T):
+    #         for y, block in enumerate(column):
+    #             height = 0
+    #             if block == 1:
+    #                 while grid[y][x] == 1:
+    #                     height += 1
+    #                     if height < 4:
+    #                         break
+    #                     elif height == 19:
+    #                         break
+    #                     y += 1
+    #                 else:
+    #                     indeces.append((x, y))
 
-    def shifting(self):
-        grids = np.loadtxt("./data/grids.csv", delimiter=",")
+    def shifting_down(self):
+        grids = np.loadtxt(self.grids, delimiter=",")
         size = grids.size
         n = int(size / (20 * 10))
         grids.resize((n, 20, 10))
-        df = pd.read_csv("./data/moves.csv")
+        df = pd.read_csv(self.moves)
         df_aug = pd.DataFrame(
             index=np.arange(
                 LENGHT,
@@ -163,7 +168,7 @@ class Augmentation:
 
     def save(self, df):
         df.to_csv(f"data/{time.time()}.csv", index=False)
-        df = pd.DataFrame(index=np.arange(0, 500), columns=("grid", "move"))
+        df = pd.DataFrame(index=np.arange(0, 500), columns=("grid", "move"), )
         return df, iter
 
     def get_indeces(self, grid):
@@ -192,7 +197,7 @@ class Augmentation:
 
 
 if __name__ == "__main__":
-    au = Augmentation()
+    au = Augmentation('./data/grids.csv','./data/moves.csv' ,'./data/heights.csv')
     # files = os.listdir('./data')
     # ['Unnamed: 0.1', 'Unnamed: 0', 'move', '0']d
     # filenames = []
@@ -203,5 +208,5 @@ if __name__ == "__main__":
     # moves = ['ROT', 'RIGHT', 'LEFT', 'DOWN']
     # filenames =[0]
     # au.create_holes(move,filenames)
-    # au.shifting()
-    au.heights('/Users/rostyslavmosorov/Desktop/tetris_ai/data/finalgrid.csv')
+    # au.flip()
+    au.flip()
