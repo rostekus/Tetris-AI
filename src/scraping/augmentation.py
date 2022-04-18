@@ -7,7 +7,7 @@ import os.path
 import time
 import re
 
-LENGHT = 1000000
+LENGHT = 100000
 
 
 class Augmentation:
@@ -24,6 +24,11 @@ class Augmentation:
     shifting()
         Fucntion shifts every grid downwards 3 times.
     """
+
+    def __init__(self, grids, moves, heights):
+        self.grids = grids
+        self.moves = moves
+        self.heights = heights
 
     def get_height(self, grid):
         locked = np.zeros(10)
@@ -43,12 +48,12 @@ class Augmentation:
         for filename in filenames:
             for mov in moves:
 
-                df = pd.read_csv(f"./data/move.csv")
+                df = pd.read_csv(self.moves)
                 df[df["move"] == mov]
 
                 indeces = np.array(df[df.move == mov].index)
 
-                grids = np.loadtxt(f"./data/grids.csv")
+                grids = np.loadtxt(self.grids)
                 files_num = 0
 
                 size = grids.size
@@ -97,28 +102,28 @@ class Augmentation:
                 np.savetxt(outfile, slice_2d, fmt="%i", delimiter=",")
         df_aug[:iter].to_csv(f"./data/aug/{name}-moves.csv", index=False)
 
-    def delete_object(self, grid):
-        indeces = []
-        for x, column in enumerate(grid.T):
-            for y, block in enumerate(column):
-                height = 0
-                if block == 1:
-                    while grid[y][x] == 1:
-                        height += 1
-                        if height < 4:
-                            break
-                        elif height == 19:
-                            break
-                        y += 1
-                    else:
-                        indeces.append((x, y))
+    # def delete_object(self, grid):
+    #     indeces = []
+    #     for x, column in enumerate(grid.T):
+    #         for y, block in enumerate(column):
+    #             height = 0
+    #             if block == 1:
+    #                 while grid[y][x] == 1:
+    #                     height += 1
+    #                     if height < 4:
+    #                         break
+    #                     elif height == 19:
+    #                         break
+    #                     y += 1
+    #                 else:
+    #                     indeces.append((x, y))
 
-    def shifting(self):
-        grids = np.loadtxt("./data/grids.csv", delimiter=",")
+    def shifting_down(self):
+        grids = np.loadtxt(self.grids, delimiter=",")
         size = grids.size
         n = int(size / (20 * 10))
         grids.resize((n, 20, 10))
-        df = pd.read_csv("./data/moves.csv")
+        df = pd.read_csv(self.moves)
         df_aug = pd.DataFrame(
             index=np.arange(
                 LENGHT,
@@ -163,7 +168,7 @@ class Augmentation:
 
     def save(self, df):
         df.to_csv(f"data/{time.time()}.csv", index=False)
-        df = pd.DataFrame(index=np.arange(0, 500), columns=("grid", "move"))
+        df = pd.DataFrame(index=np.arange(0, 500), columns=("grid", "move"), )
         return df, iter
 
     def get_indeces(self, grid):
@@ -173,9 +178,117 @@ class Augmentation:
             indeces.append((y, x))
         return indeces
 
+    def flip(self):
+        grids = np.loadtxt(self.grids, delimiter=",")
+        grids = grids.reshape((int(grids.shape[0] / 20), 20, 10))
+        moves = pd.read_csv(self.moves)
+        heights = pd.read_csv(self.heights)
+        flipped_grids = np.zeros(grids.shape)
+        flapped_moves = pd.DataFrame(np.zeros(heights.shape))
+        for i, grid in enumerate(grids):
+            flipped_grids[i] = np.fliplr(grid)
+            if moves["move"].iloc[i] == "RIGHT":
+                flapped_moves.iloc[i] = "LEFT"
+            elif moves["move"].iloc[i] == "LEFT":
+                flapped_moves.iloc[i] = "RIGHT"
+            else:
+                flapped_moves.iloc[i] = moves["move"].iloc[i]
+        with open('./data/heightsv2.csv', "w") as outfile:
+            np.savetxt(outfile, heights, fmt="%i", delimiter=",")
+            outfile.write(b"\n")
+            np.savetxt(outfile, np.fliplr(heights), fmt="%i", delimiter=",")
+        
+        moves_cot = pd.concat([moves, flapped_moves], ignore_index=True)
+        moves_cot.to_csv("./data/movesv2.csv")
+
+        with open("./data/gridsv2", "w") as outfile:
+            for slice_2d in grids:
+                np.savetxt(outfile, slice_2d, fmt="%i", delimiter=",")
+            for slice_2d in flipped_grids:
+                np.savetxt(outfile, slice_2d, fmt="%i", delimiter=",")
+
+    def get_indeces(self, grid, heights):
+        for i, height in enumerate(heights):
+            grid.T[i][19-int(height):20] = 0
+        X, Y = np.where(grid == 1)
+        indeces = []
+        for x, y in zip(X, Y):
+            indeces.append((y, x))
+        return indeces
+
+    def shifting_up(self):
+        moves_aug = pd.DataFrame(index=np.arange(0, LENGHT), columns=["move"])
+        heights_aug = heights_aug =np.zeros(shape=(LENGHT, 10), dtype =np.int8).astype(np.short)
+        grids_aug = np.zeros(shape=(LENGHT ,20, 10)).astype(np.short)
+
+        grids = np.loadtxt(self.grids, delimiter=",",dtype =np.int8).astype(np.short)
+        grids = grids.reshape((int(grids.shape[0] / 20), 20, 10))
+        moves = pd.read_csv(self.moves)
+        heights = np.loadtxt(self.heights, delimiter=',')
+
+        iter = 0
+        delete = []
+        for item , (grid, move, height) in enumerate(zip(grids, moves['move'], heights)):
+            try:
+                max_y = 19-np.max(heights[0])
+                indeces = self.get_indeces(grid.copy(), height)
+                min_y = max(indeces, key = lambda x: x[1])
+                diff = max_y -min_y[1]
+            except:
+                delete.append(item)
+                continue
+            else:
+                if diff <= 0:
+                    continue
+
+                for additional_height in range(1, int(diff)-2):
+                    grid_up = np.zeros((20, 10))
+                    for x,y in indeces:
+                        grid_up[y][x] =1
+                    for j, col in enumerate(grid_up.T):
+                        col[20-int(height[j])-additional_height:20] = 1
+                    for i in range(10):
+                        for h in range(int((height+additional_height-1)[i])):
+                            grid_hole = grid_up.copy()
+                            grid_hole[19-h][i] = 0
+                            grids_aug[iter] = grid_hole
+                            moves_aug['move'][iter] = move
+                            heights_aug[iter] = height + 1
+                            iter += 1
+                            if iter == LENGHT:
+                                name = time.time()
+                                with open(f"./data/aug/{name}-grids.csv", "a") as outfile:
+                                    for slice_2d in grids_aug[:iter]:
+                                        np.savetxt(outfile, slice_2d, fmt="%i", delimiter=",")
+                                moves_aug[:iter].to_csv(f"./data/aug/{name}-moves.csv", index=False)
+                                with open(f"./data/aug/{name}-heights.csv", "a") as outfile:
+                                    np.savetxt(outfile, heights_aug[:iter], fmt="%i", delimiter=",")
+                                iter = 0
+                                moves_aug = pd.DataFrame(index=np.arange(0, LENGHT), columns=["move"])
+                                heights_aug =np.zeros(shape=(LENGHT, 10)).astype(np.short)
+                                grids_aug = np.zeros(shape=(LENGHT ,20, 10)).astype(np.short)
+
+        name = time.time()
+        with open(f"./data/aug/{name}-grids.csv", "a") as outfile:
+            for slice_2d in grids_aug[:iter]:
+                np.savetxt(outfile, slice_2d, fmt="%i", delimiter=",")
+        moves_aug[:iter].to_csv(f"./data/aug/{name}-moves.csv", index=False)
+        with open(f"./data/aug/{name}-heights.csv", "a") as outfile:
+                                    np.savetxt(outfile, heights_aug[:iter], fmt="%i", delimiter=",")
+        
+        grids = np.delete(grids,delete)
+        moves.drop(delete, inplace=True)
+        heights = np.delete(heights, delete)
+        with open(f"./data/grids.csv", "a") as outfile:
+            for slice_2d in grids:
+                np.savetxt(outfile, slice_2d, fmt="%i", delimiter=",")
+        moves.to_csv(f"./data/moves.csv", index=False)
+        with open(f"./data/aug/heightsV2.csv", "a") as outfile:
+            np.savetxt(outfile, heights_aug[:iter], fmt="%i", delimiter=",")
+
 
 if __name__ == "__main__":
-    au = Augmentation()
+    au = Augmentation('./data/grids.csv','./data/moves.csv' ,'./data/heights.csv')
     # files = os.listdir('./data')
     # ['Unnamed: 0.1', 'Unnamed: 0', 'move', '0']d
     # filenames = []
@@ -186,4 +299,5 @@ if __name__ == "__main__":
     # moves = ['ROT', 'RIGHT', 'LEFT', 'DOWN']
     # filenames =[0]
     # au.create_holes(move,filenames)
-    au.shifting()
+    # au.flip()
+    au.flip()
