@@ -96,6 +96,7 @@ To boost performance of the AI, I begin the analyzis of the data
   <img width="720", src="/images/data.jpg">
 </p>
 The average high in the column is really low, it can explains the behaviour of the model when the height grows. Also there is dispropution in the amount of the LEFT and RIGHT moves. It is caused by the tactics of propessional tetris player. They tend to leave the last column empty.
+
 ## Project Structure
 ------------
 
