@@ -17,13 +17,10 @@ def main():
     parser.add_argument('--scrap',action='store',
     help='Run scrapping',nargs = '?', const='./video/video.mp4', type=str)
 
-    parser.add_argument('--aug', action='store', 
-    help='Augemnt data',nargs = '?', const='./video/video.mp4', type=str)
     parser.add_argument('--aug', action='store_true')
     
     
     arguments = vars(parser.parse_args())   
-    print(arguments)
 
     
     if arguments['game']:
@@ -31,6 +28,15 @@ def main():
 
     elif arguments['ai']:
         game.tetrisTF.play()
+        if arguments['scrap'] == True:
+            game.tetrisTF.play()
+        elif isinstance(arguments['scrap'], str):
+            if os.path.isfile(arguments['scrap']):
+                game.tetrisTF.play( arguments['scrap']) 
+            else:
+                print('Incorrect file name')
+        else:
+                print('Incorrect file name')
 
     elif arguments['scrap']:
         if arguments['scrap'] == True:
@@ -39,8 +45,8 @@ def main():
             if os.path.isfile(arguments['scrap']):
                 scraping.scrap.TetrisGrabber(arguments['scrap']).create_grid()
         else:
-            print('Incorect file name')
-            
+            print('Incorrect file name')
+
     elif arguments['aug']:
         scraping.augment.main()
 
