@@ -1,9 +1,10 @@
 import pygame
 import random
-import config
-import numpy as np
-pygame.font.init()
-import keras
+from . import config
+
+
+
+
 
 # TODO
 # quit button
@@ -32,14 +33,7 @@ class Game:
         self.top_left_x = (self.s_width - self.play_width) // 2
         self.top_left_y = self.s_height - self.play_height
 
-    def create_grid(self, locked_pos={}, keras =  False):  # *
-        if keras:
-            grid =  np.zeros((20,10))
-            for (j,i) in locked_pos:
-                grid[i][j] = 1
-            return grid
-
-
+    def create_grid(self, locked_pos={}):  # *
         grid = [[(0, 0, 0) for _ in range(10)] for _ in range(20)]
 
         for i in range(len(grid)):
@@ -234,23 +228,12 @@ class Game:
         )
 
         self.draw_grid(surface, grid)
-    def get_height(self, grid):
-        locked = np.zeros(10)
-        for i, column in enumerate(grid.T):
-            j = 19
-            height = 0
-            while column[j] and j >= 0:
-                height += 1
-                j -= 1
-            if locked[i] != height:
-                locked[i] = height
-        return locked
-    
-    def play(self, win):  
+
+    def play(self, win):  # *
         last_score = self.max_score()
         locked_positions = {}
         grid = self.create_grid(locked_positions)
-        
+
         change_Object = False
         run = True
         current_Object = self.get_shape()
@@ -260,15 +243,8 @@ class Game:
         fall_speed = 0.27
         level_time = 0
         score = 0
-        state = self.create_grid(locked_positions, keras = True)
-        model = keras.models.load_model(r'/Users/rostyslavmosorov/Desktop/tetris_ai/src/game/76.h5')
-        height = self.get_height(state)
-        action =np.argmax(model.predict([state.reshape((1,20,10)), height.reshape(1,10)]))
 
         while run:
-            
-            state = self.create_grid(locked_positions, keras=True)
-            
             grid = self.create_grid(locked_positions)
             fall_time += clock.get_rawtime()
             level_time += clock.get_rawtime()
@@ -289,37 +265,35 @@ class Game:
                     current_Object.y -= 1
                     change_Object = True
 
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+                    pygame.display.quit()
 
-            if action == 1:
-                current_Object.x -= 1
-                if not (self.valid_space(current_Object, grid)):
-                    current_Object.x += 1
-
-            elif action == 2:
-                current_Object.x += 1
-                if not (self.valid_space(current_Object, grid)):
-                    current_Object.x -= 1
-
-            elif action == 0:
-                current_Object.y += 1
-                if not (self.valid_space(current_Object, grid)):
-                    current_Object.y -= 1
-
-            elif action == 3:
-                    current_Object.rotation += 1
-                    if not (self.valid_space(current_Object, grid)):
-                        current_Object.rotation -= 1
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_LEFT:
+                        current_Object.x -= 1
+                        if not (self.valid_space(current_Object, grid)):
+                            current_Object.x += 1
+                    if event.key == pygame.K_RIGHT:
+                        current_Object.x += 1
+                        if not (self.valid_space(current_Object, grid)):
+                            current_Object.x -= 1
+                    if event.key == pygame.K_DOWN:
+                        current_Object.y += 1
+                        if not (self.valid_space(current_Object, grid)):
+                            current_Object.y -= 1
+                    if event.key == pygame.K_UP:
+                        current_Object.rotation += 1
+                        if not (self.valid_space(current_Object, grid)):
+                            current_Object.rotation -= 1
 
             shape_pos = self.convert_shape_format(current_Object)
-            pygame.time.delay(100)
+
             for i in range(len(shape_pos)):
                 x, y = shape_pos[i]
                 if y > -1:
                     grid[y][x] = current_Object.color
-                    state[y][x] = 1
-            
-            height = self.get_height(state)
-            action =np.argmax(model.predict([state.reshape((1,20,10)), height.reshape(1,10)]))
 
             if change_Object:
                 for pos in shape_pos:
@@ -355,9 +329,15 @@ class Game:
 
         pygame.display.quit()
 
+def play():
+    try:
+        pygame.font.init()
+        game = Game()
+        win = pygame.display.set_mode((config.s_width, config.s_height))
+        pygame.display.set_caption("Tetris")
+        game.main_menu(win)
+    except:
+        print('Finished')
 
 if __name__ == "__main__":
-    game = Game()
-    win = pygame.display.set_mode((config.s_width, config.s_height))
-    pygame.display.set_caption("Tetris")
-    game.main_menu(win)
+    play()

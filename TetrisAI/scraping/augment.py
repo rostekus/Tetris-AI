@@ -1,11 +1,10 @@
 from fileinput import filename
+from re import L
 from shutil import move
 import numpy as np
 import pandas as pd
-import os.path
-
 import time
-import re
+
 
 LENGHT = 100000
 
@@ -41,65 +40,63 @@ class Augmentation:
                 locked[i] = height
         return locked
 
-    def create_holes(self, mov, filenames, aug=False):
+    def create_holes(self):
         moves = ["ROT", "RIGHT", "LEFT", "DOWN"]
         iter = 0
-        for filename in filenames:
-            for mov in moves:
+        for mov in moves:
 
-                df = pd.read_csv(self.moves)
-                df[df["move"] == mov]
+            df = pd.read_csv(self.moves)
+            df[df["move"] == mov]
 
-                indeces = np.array(df[df.move == mov].index)
+            indeces = np.array(df[df.move == mov].index)
 
-                grids = np.loadtxt(self.grids)
-                files_num = 0
+            grids = np.loadtxt(self.grids)
+            files_num = 0
 
-                size = grids.size
-                n = int(size / (20 * 10))
-                grids.resize((n, 20, 10))
-                df_aug = pd.DataFrame(index=np.arange(0, LENGHT), columns=["move"])
-                df_aug.iloc[:] = mov
-                grids_aug = np.zeros(shape=(LENGHT, 200))
-                for i, grid in enumerate(grids[indeces]):
-                    grid_holes = grid.copy()
-                    heights = self.get_height(grid)
-                    # max_height = max(heights)
-                    # min_height = min(heights)
-                    for i, height in enumerate(heights):
-                        if height > 3:
-                            for h in range(0, int(height) - 1):
-                                grid_holes = grid.copy()
-                                grid_holes.T[i][19 - h] = 0
+            size = grids.size
+            n = int(size / (20 * 10))
+            grids.resize((n, 20, 10))
+            df_aug = pd.DataFrame(index=np.arange(0, LENGHT), columns=["move"])
+            df_aug.iloc[:] = mov
+            grids_aug = np.zeros(shape=(LENGHT, 200))
+            for i, grid in enumerate(grids[indeces]):
+                grid_holes = grid.copy()
+                heights = self.get_height(grid)
+                for i, height in enumerate(heights):
+                    if height > 3:
+                        for h in range(0, int(height) - 1):
+                            grid_holes = grid.copy()
+                            grid_holes.T[i][19 - h] = 0
 
-                                grids_aug[iter] = grid_holes.flatten()
-                                # grids_aug[iter] = grid_holes
-                                iter += 1
-                                if iter == LENGHT:
-                                    assert grids_aug.shape[0] == grids_aug.shape
-                                    name = time.time()
-                                    with open(
-                                        f"./data/aug/{name}-grids.csv", "a"
-                                    ) as outfile:
-                                        for slice_2d in grids_aug[:iter]:
-                                            np.savetxt(
-                                                outfile,
-                                                slice_2d,
-                                                fmt="%i",
-                                                delimiter=",",
-                                            )
-                                    df_aug[: iter + 1].to_csv(
-                                        f"./data/aug/{name}-moves.csv", index=False
-                                    )
-                                    iter = 0
-                                    grids_aug = np.zeros(shape=(LENGHT, 200))
-                                    print("saved")
-                                    files_num += 1
+                            grids_aug[iter] = grid_holes.flatten()
+                            # grids_aug[iter] = grid_holes
+                            iter += 1
+                            if iter == LENGHT:
+                                assert grids_aug.shape[0] == grids_aug.shape
+                                name = time.time()
+                                with open(
+                                    f"./data/aug/{name}-grids.csv", "a"
+                                ) as outfile:
+                                    for slice_2d in grids_aug[:iter]:
+                                        np.savetxt(
+                                            outfile,
+                                            slice_2d,
+                                            fmt="%i",
+                                            delimiter=",",
+                                        )
+                                df_aug[: iter + 1].to_csv(
+                                    f"./data/aug/{name}-moves.csv", index=False
+                                )
+                                iter = 0
+                                grids_aug = np.zeros(shape=(LENGHT, 200))
+                                print("saved")
+                                files_num += 1
         name = time.time()
         with open(f"./data/aug/{name}-grids.csv", "a") as outfile:
             for slice_2d in grids_aug[:iter]:
                 np.savetxt(outfile, slice_2d, fmt="%i", delimiter=",")
         df_aug[:iter].to_csv(f"./data/aug/{name}-moves.csv", index=False)
+
 
     # def delete_object(self, grid):
     #     indeces = []
@@ -285,18 +282,9 @@ class Augmentation:
         with open(f"./data/aug/heightsV2.csv", "a") as outfile:
             np.savetxt(outfile, heights_aug[:iter], fmt="%i", delimiter=",")
 
-
+def main():
+        au = Augmentation('./data/grids.csv','./data/moves.csv' ,'./data/heights.csv')
+        au.flip()
+        au.create_holes()
 if __name__ == "__main__":
-    au = Augmentation('./data/grids.csv','./data/moves.csv' ,'./data/heights.csv')
-    # files = os.listdir('./data')
-    # ['Unnamed: 0.1', 'Unnamed: 0', 'move', '0']d
-    # filenames = []
-    # for file in files:
-    #     find_name = re.search(pattern, file, re.IGNORECASE)
-    #     if find_name:
-    #         filenames.append(find_name.group(1))
-    # moves = ['ROT', 'RIGHT', 'LEFT', 'DOWN']
-    # filenames =[0]
-    # au.create_holes(move,filenames)
-    # au.flip()
-    au.flip()
+   main()

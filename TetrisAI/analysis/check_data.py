@@ -29,19 +29,11 @@ class Check:
 
 
     def check_moves(self):
-        # files = self.get_files()
-        files = '1648588019.3197172.csv'
-        for file in files:
-            df = pd.read_csv(join('./data', file))
-            iter_df = self.get_grid(df)
-            for i in range(len(df)):
-                try:
-                    _, row = next(iter_df)
-                    grid, move = row
-                except:
-                    df.to_csv(f"new.csv", index=False)
-                    cv2.destroyAllWindows()
-
+           
+            grids = np.loadtxt('/data/grids.csv', delimiter=",")
+            grids = grids.reshape((int(grids.shape[0] / 20), 20, 10))
+            df = pd.DataFrame(np.zeros(grids.shape[0]))
+            for i, grid in enumerate(grids):
                 scale_percent = 1000 # percent of original size
                 width = int(10 * scale_percent / 100)
                 height = int(20 * scale_percent / 100)
@@ -59,28 +51,30 @@ class Check:
                     break
 
                 if q== 3:
-                    df['move'][i] = 'RIGHT'
+                    df.iloc[i] = 'RIGHT'
 
                 if q== 1:
-                    df['move'][i] = 'DOWN'
+                    df.iloc[i] = 'DOWN'
 
                 if q== 2:
-                    df['move'][i] = 'LEFT'
+                    df.iloc[i] = 'LEFT'
 
                 if q== 0:
-                    df['move'][i] = 'ROT'
+                    df.iloc[i] = 'ROT'
 
                 if q == 47:
                     df.drop(i)
 
                 if q == 32:
                     pass
-
-
-if __name__ == "__main__":
+def main():
     check =  Check()
     filenames = check.get_files()
     check.check_moves()
+
+
+if __name__ == "__main__":
+    main()
     # path = '/Users/rostyslavmosorov/Desktop/tetris_ai/data'    
     # print(len([f for f in listdir(path) if isfile(join(path, f))]))
     

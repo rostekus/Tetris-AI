@@ -10,7 +10,7 @@ DESCRIPTION
 import numpy as np
 import cv2
 import time
-import imutils
+# import imutils
 import pandas as pd
 from os import path
 import operator
@@ -78,7 +78,7 @@ class TetrisGrabber:
         self.min_x = np.array([5, 0])
         self.height = 0
 
-    def create_grid(self, display):
+    def create_grid(self, display= True):
 
         cap = cv2.VideoCapture(self.filename)
         iter = 0
@@ -513,11 +513,10 @@ class TetrisGrabber:
 
 def main():
     parser = argparse.ArgumentParser(description="Scraping module")
-    parser.add_argument("-d", action="store_true", help="Display grids")
+    parser.add_argument("-d", action="store_true", help="Display grids", default=False)
     args = vars(parser.parse_args())
     display = args["d"]
     tertis = TetrisGrabber("./video/video.mp4")
-    display = True
     tertis.create_grid(display)
 
 
