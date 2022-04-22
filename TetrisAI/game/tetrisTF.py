@@ -18,13 +18,14 @@ class Object(object):
 
 
 class Game:
-    def __init__(self):
+    def __init__(self,model):
         self.s_width = config.s_width
         self.s_height = config.s_height
         self.play_width = config.play_width
         self.play_height = config.play_height
         self.block_size = config.block_size
         self.shapes = config.shapes
+        self.model = model
 
         self.top_left_x = (self.s_width - self.play_width) // 2
         self.top_left_y = self.s_height - self.play_height
@@ -258,7 +259,7 @@ class Game:
         level_time = 0
         score = 0
         state = self.create_grid(locked_positions, keras = True)
-        model = keras.models.load_model(r'/Users/rostyslavmosorov/Desktop/tetris_ai/src/game/76.h5')
+        model = keras.models.load_model(self.model)
         height = self.get_height(state)
         action =np.argmax(model.predict([state.reshape((1,20,10)), height.reshape(1,10)]))
 
@@ -352,8 +353,8 @@ class Game:
 
         pygame.display.quit()
 
-def play():
-    game = Game()
+def play(model = "/Users/rostyslavmosorov/Desktop/tetris_ai/TetrisAI/analysis/model/finalmodel_functional.h5"):
+    game = Game(model)
     win = pygame.display.set_mode((config.s_width, config.s_height))
     pygame.display.set_caption("Tetris")
     game.main_menu(win)
