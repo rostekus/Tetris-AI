@@ -16,20 +16,18 @@ git clone https://github.com/rostekus/Tetris-AI
 ```
 Setup
 ```
-cd snake-ai
-python3 setup.py install
+cd Tetris-AI
+pip install .
 ```
 ## Usage
-If you want just play Tetris game
-```
-python3 tetris.py
-```
-On the other hand, if you want to create your dataset, firstly dowloand video, copy it to video folder and name it `video.mp4`.
-Than run scrapping module
-```
-python3 scrapping.py [-d]
-```
-* The `-d` displays scrapping grids
+ ```
+ python TetrisAI (--ai <MODEL_PATH>| --game) --scrap <VIDEO_PATH> -- aug 
+ ```
+ * `--ai` AI plays Tetris, addiotionaly you can specify model path, by default analysis/model/finalmodel_functional.h5
+ * `--game` play Tetris
+ * `--scrap` scrapping grids and moves from video, you can specify video path, by default video/video.mp4
+ * `--aug` augements dtaset, firstly flips the grids then create holes
+
 <p align="center">
   <img width="480" src="/images/scraping.gif">
 </p>
