@@ -105,8 +105,9 @@ You can find notebook on [kaggle site](https://www.kaggle.com/code/rostekus/tetr
 
     ├── LICENSE
     ├── README.md
-    ├── src
-    │   ├── analysis    
+    ├── TetrisAI
+    │   ├── analysis  
+    │   │   ├── models                  <- directory containing saved models
     │   │   ├── check_data.py           <- module for checking scrapped data
     │   │   ├── create_db.py            <- creating two files for training from scrapped files
     │   │   ├── model.h5                <- trained model
