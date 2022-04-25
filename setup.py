@@ -18,6 +18,6 @@ setup(
     license="MIT License",
     url="https://github.com/rostekus/Tetris-AI",
     install_requires=install_requires,
-    packages=find_packages(where="src", exclude="tests*"),
-    package_dir={"": "src"},
+    packages=find_packages(where="TetrisAI", exclude="tests*"),
+    package_dir={"": "TetrisAI"},
 )
